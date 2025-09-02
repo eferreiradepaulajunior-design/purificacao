@@ -1,12 +1,18 @@
 <?php
-
-
 // ARQUIVO: api/outbound_webhook.php
 // Endpoint para outros sistemas buscarem os dados.
-// Segurança: adicione uma verificação de token/chave de API aqui!
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/db.php';
+
+// Verificação simples de token via query string
+$providedToken = $_GET['token'] ?? '';
+$expectedToken = getenv('API_TOKEN');
+if (!$expectedToken || !hash_equals($expectedToken, $providedToken)) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Token inválido.']);
+    exit;
+}
 
 // Exemplo de busca por CNPJ
 $cnpj = $_GET['cnpj'] ?? null;
@@ -29,7 +35,7 @@ if (!$client) {
 
 // Decodificar o JSON para mesclar com os dados principais
 $enrichedData = json_decode($client['enriched_data'], true);
-unset($client['enriched_data']); // Remover o campo JSON original da resposta
+unset($client['enriched_data']);
 
 // Adicionar contatos
 $contactsStmt = $pdo->prepare("SELECT contato, info, tipo FROM client_contacts WHERE client_id = ?");
@@ -39,7 +45,5 @@ $contacts = $contactsStmt->fetchAll(PDO::FETCH_ASSOC);
 $client['contatos'] = $contacts;
 $client['dados_enriquecidos'] = $enrichedData;
 
-
 echo json_encode($client);
-
 ?>

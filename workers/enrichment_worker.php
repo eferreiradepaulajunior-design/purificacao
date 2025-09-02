@@ -110,8 +110,8 @@ try {
 
     // --- ETAPA 2: Processar clientes pendentes para enriquecimento ---
     echo "\n--- ETAPA 2: Processando clientes pendentes ---\n";
-    $googleApiKey = get_setting($pdo, 'google_api_key');
-    $enrichmentApiKey = get_setting($pdo, 'enrichment_service_api_key');
+    $googleApiKey    = get_setting($pdo, 'google_api_key');
+    $searchServiceUrl = get_setting($pdo, 'search_service_url');
     $outboundWebhookUrl = get_setting($pdo, 'outbound_webhook_url');
     $stmtPending = $pdo->prepare("SELECT * FROM clients WHERE status = 'pending' LIMIT 100");
     $stmtPending->execute();
@@ -127,8 +127,8 @@ try {
         echo "Enriquecendo cliente ID: {$client['id']} ({$client['nomeEmpresa']})...\n";
         $googleData = enrichWithGoogle($client, $googleApiKey);
         $client['website'] = $googleData['website'] ?? null;
-        $thirdPartyData = enrichWithThirdParty($client, $enrichmentApiKey);
-        $allEnrichedData = array_merge($googleData, $thirdPartyData);
+        $searchData = enrichWithSearchService($client, $searchServiceUrl);
+        $allEnrichedData = array_merge($googleData, $searchData);
         $finalStmt = $pdo->prepare("UPDATE clients SET enriched_data = ?, status = 'enriched' WHERE id = ?");
         $finalStmt->execute([json_encode($allEnrichedData), $client['id']]);
         echo "Cliente ID: {$client['id']} enriquecido com sucesso.\n";

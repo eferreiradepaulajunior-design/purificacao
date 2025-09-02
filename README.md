@@ -100,3 +100,20 @@ O endpoint `api/outbound_webhook.php` agora exige um token de acesso informado v
 ```
 Defina `API_TOKEN` no `.env` para controlar o acesso.
 
+## Integração com SerpAPI
+
+1. **Obtenha a chave**
+   - Acesse [SerpAPI](https://serpapi.com) e crie uma conta gratuita.
+   - Copie sua *API Key* disponível no painel do usuário.
+2. **Ative o serviço na aplicação**
+   - No menu de configurações (`settings.php`), informe a chave no campo **Chave do SerpAPI**.
+   - Salve as alterações para que o worker possa utilizá-la.
+3. **Exemplo de uso**
+   ```php
+   $serpApiKey = get_setting($pdo, 'serpapi_key');
+   $query = urlencode('exemplo de empresa');
+   $url = "https://serpapi.com/search.json?q={$query}&engine=google&api_key={$serpApiKey}";
+   $response = file_get_contents($url);
+   ```
+   O retorno é um JSON com resultados de busca que podem ser utilizados para enriquecer dados de clientes.
+

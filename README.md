@@ -17,6 +17,7 @@ Aplicação PHP para ingestão e enriquecimento de dados de clientes com uma int
 ├── assets/              # CSS/JS utilizados na interface
 ├── includes/            # Autenticação, conexão com o banco e funções auxiliares
 ├── workers/             # Scripts de processamento assíncrono
+├── search_service/      # Microserviço Python (FastAPI) para buscas externas
 ├── dashboard.php        # Interface principal de visualização
 ├── settings.php         # Tela de configuração das chaves e URLs
 ├── webhooks_docs.php    # Documentação do webhook de saída
@@ -51,6 +52,18 @@ Aplicação PHP para ingestão e enriquecimento de dados de clientes com uma int
    ```
    Acesse `http://localhost:8000` no navegador e faça login.
 
+5. **Serviço de Busca (opcional)**
+   O diretório `search_service/` contém um microserviço em Python que consulta perfis do LinkedIn e dados públicos de empresas.
+   Para executá-lo:
+   ```bash
+   cd search_service
+   cp .env.example .env   # informe sua SERPAPI_KEY
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+   ```
+   Informe a URL em `settings.php` no campo **URL do Serviço de Busca** (ex.: `http://127.0.0.1:8000`).
+
+
 ## Processamento e Worker
 
 O processo de enriquecimento é feito por jobs armazenados na tabela `jobs`.
@@ -59,6 +72,7 @@ Execute o worker periodicamente (via cron ou manualmente):
 php workers/enrichment_worker.php
 ```
 Ele buscará jobs pendentes, consultará APIs externas e salvará os resultados.
+
 
 ## Serviço LinkedIn (FastAPI)
 
@@ -70,6 +84,7 @@ uvicorn main:app --reload
 ```
 
 Garanta que o PHP possa acessar `http://localhost:8000` (ajuste regras de firewall ou proxy conforme necessário).
+
 
 ## Endpoints Principais
 
@@ -92,6 +107,7 @@ php -l includes/db.php
 php -l api/outbound_webhook.php
 ```
 Contribuições são bem-vindas; mantenha o estilo simples e funcional.
+
 Aplicação PHP para ingestão e enriquecimento de dados de clientes. 
 
 ## Configuração
@@ -127,4 +143,5 @@ Defina `API_TOKEN` no `.env` para controlar o acesso.
    $response = file_get_contents($url);
    ```
    O retorno é um JSON com resultados de busca que podem ser utilizados para enriquecer dados de clientes.
+
 

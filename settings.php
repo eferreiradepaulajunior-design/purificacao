@@ -109,6 +109,9 @@ $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                                 <input type="password" id="google_api_key" name="google_api_key" value="<?= htmlspecialchars($settings['google_api_key'] ?? '') ?>" class="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             </div>
                             <div>
+                                <label for="search_service_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL do Serviço de Busca</label>
+                                <input type="text" id="search_service_url" name="search_service_url" value="<?= htmlspecialchars($settings['search_service_url'] ?? '') ?>" class="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="http://localhost:8000">
+
                                 <label for="serpapi_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Chave do SerpAPI</label>
                                 <input type="password" id="serpapi_key" name="serpapi_key" value="<?= htmlspecialchars($settings['serpapi_key'] ?? '') ?>" class="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             </div>

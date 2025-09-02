@@ -60,6 +60,17 @@ php workers/enrichment_worker.php
 ```
 Ele buscará jobs pendentes, consultará APIs externas e salvará os resultados.
 
+## Serviço LinkedIn (FastAPI)
+
+Um pequeno serviço em FastAPI disponível em `linkedin_service/` oferece integração com a SerpAPI para buscas de perfis. Para executá-lo em modo de desenvolvimento:
+
+```bash
+cd linkedin_service
+uvicorn main:app --reload
+```
+
+Garanta que o PHP possa acessar `http://localhost:8000` (ajuste regras de firewall ou proxy conforme necessário).
+
 ## Endpoints Principais
 
 - `GET /api/get_clients.php` – lista clientes e estatísticas para o dashboard
@@ -99,4 +110,21 @@ O endpoint `api/outbound_webhook.php` agora exige um token de acesso informado v
 /api/outbound_webhook.php?cnpj=12345678901234&token=SEU_TOKEN
 ```
 Defina `API_TOKEN` no `.env` para controlar o acesso.
+
+## Integração com SerpAPI
+
+1. **Obtenha a chave**
+   - Acesse [SerpAPI](https://serpapi.com) e crie uma conta gratuita.
+   - Copie sua *API Key* disponível no painel do usuário.
+2. **Ative o serviço na aplicação**
+   - No menu de configurações (`settings.php`), informe a chave no campo **Chave do SerpAPI**.
+   - Salve as alterações para que o worker possa utilizá-la.
+3. **Exemplo de uso**
+   ```php
+   $serpApiKey = get_setting($pdo, 'serpapi_key');
+   $query = urlencode('exemplo de empresa');
+   $url = "https://serpapi.com/search.json?q={$query}&engine=google&api_key={$serpApiKey}";
+   $response = file_get_contents($url);
+   ```
+   O retorno é um JSON com resultados de busca que podem ser utilizados para enriquecer dados de clientes.
 

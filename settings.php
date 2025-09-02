@@ -112,6 +112,10 @@ $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                                 <label for="enrichment_service_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Chave do Serviço de Enriquecimento</label>
                                 <input type="password" id="enrichment_service_api_key" name="enrichment_service_api_key" value="<?= htmlspecialchars($settings['enrichment_service_api_key'] ?? '') ?>" class="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             </div>
+                            <div>
+                                <label for="serpapi_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Chave do SerpAPI</label>
+                                <input type="password" id="serpapi_key" name="serpapi_key" value="<?= htmlspecialchars($settings['serpapi_key'] ?? '') ?>" class="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
                         </div>
                     </div>
 

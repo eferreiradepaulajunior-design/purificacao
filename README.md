@@ -60,6 +60,17 @@ php workers/enrichment_worker.php
 ```
 Ele buscará jobs pendentes, consultará APIs externas e salvará os resultados.
 
+## Serviço LinkedIn (FastAPI)
+
+Um pequeno serviço em FastAPI disponível em `linkedin_service/` oferece integração com a SerpAPI para buscas de perfis. Para executá-lo em modo de desenvolvimento:
+
+```bash
+cd linkedin_service
+uvicorn main:app --reload
+```
+
+Garanta que o PHP possa acessar `http://localhost:8000` (ajuste regras de firewall ou proxy conforme necessário).
+
 ## Endpoints Principais
 
 - `GET /api/get_clients.php` – lista clientes e estatísticas para o dashboard

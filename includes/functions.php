@@ -51,4 +51,40 @@ function enrichWithThirdParty($clientData, $apiKey) {
         ]
     ];
 }
+
+/**
+ * Enriquecimento de contatos via LinkedIn usando SerpAPI.
+ * Retorna um array de contatos encontrados.
+ */
+function enrichWithLinkedIn($clientData, $sector, $serpApiKey) {
+    if (empty($serpApiKey)) {
+        error_log('Chave SerpAPI ausente para enriquecimento do LinkedIn.');
+        return [];
+    }
+
+    $query = urlencode($clientData['nomeEmpresa'] . ' "' . $sector . '" site:linkedin.com/in');
+    $url   = "https://serpapi.com/search.json?engine=google&q={$query}&api_key={$serpApiKey}";
+
+    $response = @file_get_contents($url);
+    if ($response === false) {
+        error_log("Falha na requisição à SerpAPI para {$clientData['nomeEmpresa']} ({$sector}).");
+        return [];
+    }
+
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE || empty($data['organic_results'])) {
+        return [];
+    }
+
+    $contacts = [];
+    foreach ($data['organic_results'] as $result) {
+        $title = $result['title'] ?? '';
+        $link  = $result['link'] ?? '';
+        if ($title && $link) {
+            $contacts[] = ['name' => $title, 'linkedin' => $link];
+        }
+    }
+
+    return $contacts;
+}
 ?>

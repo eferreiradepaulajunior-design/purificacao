@@ -110,8 +110,10 @@ try {
 
     // --- ETAPA 2: Processar clientes pendentes para enriquecimento ---
     echo "\n--- ETAPA 2: Processando clientes pendentes ---\n";
-    $googleApiKey = get_setting($pdo, 'google_api_key');
-    $enrichmentApiKey = get_setting($pdo, 'enrichment_service_api_key');
+    $googleApiKey      = get_setting($pdo, 'google_api_key');
+    $enrichmentApiKey  = get_setting($pdo, 'enrichment_service_api_key');
+    $serpApiKey        = get_setting($pdo, 'serp_api_key');
+    $desiredSectors    = ['Setor Comercial', 'Compras'];
     $outboundWebhookUrl = get_setting($pdo, 'outbound_webhook_url');
     $stmtPending = $pdo->prepare("SELECT * FROM clients WHERE status = 'pending' LIMIT 100");
     $stmtPending->execute();
@@ -132,6 +134,19 @@ try {
         $finalStmt = $pdo->prepare("UPDATE clients SET enriched_data = ?, status = 'enriched' WHERE id = ?");
         $finalStmt->execute([json_encode($allEnrichedData), $client['id']]);
         echo "Cliente ID: {$client['id']} enriquecido com sucesso.\n";
+
+        // Enriquecimento adicional via LinkedIn
+        foreach ($desiredSectors as $sector) {
+            $linkedinContacts = enrichWithLinkedIn($client, $sector, $serpApiKey);
+            if (empty($linkedinContacts)) {
+                echo "SerpAPI sem resultados ou indisponível para setor {$sector}.\n";
+                continue;
+            }
+            foreach ($linkedinContacts as $contact) {
+                $stmtLinked = $pdo->prepare("INSERT INTO client_contacts (client_id, contato, info, tipo, source) VALUES (?, ?, ?, ?, 'linkedin')");
+                $stmtLinked->execute([$client['id'], $contact['name'], $contact['linkedin'], $sector]);
+            }
+        }
         if (!empty($outboundWebhookUrl)) {
             $stmtFullData = $pdo->prepare("SELECT * FROM clients WHERE id = ?");
             $stmtFullData->execute([$client['id']]);

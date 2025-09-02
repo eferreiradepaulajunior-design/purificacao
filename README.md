@@ -63,6 +63,7 @@ Aplicação PHP para ingestão e enriquecimento de dados de clientes com uma int
    ```
    Informe a URL em `settings.php` no campo **URL do Serviço de Busca** (ex.: `http://127.0.0.1:8000`).
 
+
 ## Processamento e Worker
 
 O processo de enriquecimento é feito por jobs armazenados na tabela `jobs`.
@@ -71,6 +72,19 @@ Execute o worker periodicamente (via cron ou manualmente):
 php workers/enrichment_worker.php
 ```
 Ele buscará jobs pendentes, consultará APIs externas e salvará os resultados.
+
+
+## Serviço LinkedIn (FastAPI)
+
+Um pequeno serviço em FastAPI disponível em `linkedin_service/` oferece integração com a SerpAPI para buscas de perfis. Para executá-lo em modo de desenvolvimento:
+
+```bash
+cd linkedin_service
+uvicorn main:app --reload
+```
+
+Garanta que o PHP possa acessar `http://localhost:8000` (ajuste regras de firewall ou proxy conforme necessário).
+
 
 ## Endpoints Principais
 
@@ -93,4 +107,41 @@ php -l includes/db.php
 php -l api/outbound_webhook.php
 ```
 Contribuições são bem-vindas; mantenha o estilo simples e funcional.
+
+Aplicação PHP para ingestão e enriquecimento de dados de clientes. 
+
+## Configuração
+
+1. Copie o arquivo `.env.example` para `.env` e ajuste as variáveis de acordo com o seu ambiente:
+   ```bash
+   cp .env.example .env
+   ```
+2. Defina as credenciais do banco de dados e o token de acesso da API no `.env`.
+3. Certifique-se de que o servidor web tenha acesso a essas variáveis de ambiente.
+
+## Segurança do Webhook
+
+O endpoint `api/outbound_webhook.php` agora exige um token de acesso informado via query string:
+```
+/api/outbound_webhook.php?cnpj=12345678901234&token=SEU_TOKEN
+```
+Defina `API_TOKEN` no `.env` para controlar o acesso.
+
+## Integração com SerpAPI
+
+1. **Obtenha a chave**
+   - Acesse [SerpAPI](https://serpapi.com) e crie uma conta gratuita.
+   - Copie sua *API Key* disponível no painel do usuário.
+2. **Ative o serviço na aplicação**
+   - No menu de configurações (`settings.php`), informe a chave no campo **Chave do SerpAPI**.
+   - Salve as alterações para que o worker possa utilizá-la.
+3. **Exemplo de uso**
+   ```php
+   $serpApiKey = get_setting($pdo, 'serpapi_key');
+   $query = urlencode('exemplo de empresa');
+   $url = "https://serpapi.com/search.json?q={$query}&engine=google&api_key={$serpApiKey}";
+   $response = file_get_contents($url);
+   ```
+   O retorno é um JSON com resultados de busca que podem ser utilizados para enriquecer dados de clientes.
+
 

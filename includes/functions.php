@@ -111,4 +111,125 @@ function enrichWithSearchService($clientData, $serviceUrl) {
     ];
 }
 
+
 ?>
+
+/**
+ * Executa uma busca de contatos no LinkedIn por meio de um serviço externo.
+ *
+ * A função inicia uma tarefa de busca e aguarda a conclusão consultando o
+ * endpoint de status. Em caso de sucesso, retorna uma lista de contatos com
+ * título e link; caso contrário, lança uma exceção.
+ *
+ * @param string $profession  Profissão ou cargo que será utilizado no filtro.
+ * @param string $searchTerm  Termo de busca adicional (ex.: empresa ou cidade).
+ * @param int    $numResults  Quantidade máxima de resultados desejados.
+ *
+ * @return array Lista de contatos no formato ['title' => string, 'link' => string]
+ *
+ * @throws Exception Quando houver falha na comunicação ou timeout.
+ */
+function enrichWithLinkedIn($profession, $searchTerm, $numResults = 20) {
+    $baseUrl = rtrim(getenv('LINKEDIN_API_URL') ?: '', '/');
+    if (empty($baseUrl)) {
+        throw new Exception('LinkedIn API URL não configurada.');
+    }
+
+    $token = getenv('API_TOKEN');
+
+    $payload = json_encode([
+        'profession' => $profession,
+        'searchTerm' => $searchTerm,
+        'numResults' => $numResults,
+    ]);
+
+    $ch = curl_init($baseUrl . '/iniciar-busca');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array_filter([
+        'Content-Type: application/json',
+        $token ? 'Authorization: Bearer ' . $token : null,
+    ]));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+    $response = curl_exec($ch);
+    if ($response === false) {
+        $error = curl_error($ch);
+        curl_close($ch);
+        throw new Exception('Erro ao iniciar busca no LinkedIn: ' . $error);
+    }
+
+    $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($statusCode < 200 || $statusCode >= 300) {
+        throw new Exception('Falha ao iniciar busca no LinkedIn.');
+    }
+
+    $data = json_decode($response, true);
+    if (!isset($data['taskId'])) {
+        throw new Exception('Resposta inválida ao iniciar busca no LinkedIn.');
+    }
+
+    $taskId = $data['taskId'];
+    $maxAttempts = 10;
+    $attempt = 0;
+
+    do {
+        $attempt++;
+        $ch = curl_init($baseUrl . '/status/' . urlencode($taskId));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array_filter([
+            'Accept: application/json',
+            $token ? 'Authorization: Bearer ' . $token : null,
+        ]));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        $response = curl_exec($ch);
+        if ($response === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            if ($attempt >= $maxAttempts) {
+                throw new Exception('Erro ao verificar status no LinkedIn: ' . $error);
+            }
+            sleep(2);
+            continue;
+        }
+
+        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($statusCode < 200 || $statusCode >= 300) {
+            if ($attempt >= $maxAttempts) {
+                throw new Exception('Falha ao verificar status no LinkedIn.');
+            }
+            sleep(2);
+            continue;
+        }
+
+        $data = json_decode($response, true);
+        if (isset($data['status']) && $data['status'] === 'completed') {
+            $contacts = [];
+            if (!empty($data['results']) && is_array($data['results'])) {
+                foreach ($data['results'] as $contact) {
+                    if (isset($contact['title'], $contact['link'])) {
+                        $contacts[] = [
+                            'title' => $contact['title'],
+                            'link'  => $contact['link'],
+                        ];
+                    }
+                }
+            }
+            return $contacts;
+        }
+
+        if (isset($data['status']) && $data['status'] === 'error') {
+            throw new Exception('Busca no LinkedIn retornou erro.');
+        }
+
+        sleep(2);
+    } while ($attempt < $maxAttempts);
+
+    throw new Exception('Timeout ao aguardar resultados do LinkedIn.');
+}
+?>
+
